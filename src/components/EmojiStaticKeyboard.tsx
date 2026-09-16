@@ -8,6 +8,7 @@ import {
   Platform,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ListRenderItemInfo,
 } from 'react-native'
 import { type EmojisByCategory } from '../types'
 import { EmojiCategory } from './EmojiCategory'
@@ -45,7 +46,7 @@ export const EmojiStaticKeyboard = React.memo(
     const hasMomentumBegan = React.useRef(false)
 
     const getItemLayout = React.useCallback(
-      (_: EmojisByCategory[] | null | undefined, index: number) => ({
+      (_: ArrayLike<EmojisByCategory> | null | undefined, index: number) => ({
         length: width,
         offset: width * index,
         index,
@@ -56,7 +57,7 @@ export const EmojiStaticKeyboard = React.memo(
     const [keyboardScrollOffsetY, setKeyboardScrollOffsetY] = React.useState(0)
 
     const renderItem = React.useCallback(
-      (props) => {
+      (props: ListRenderItemInfo<EmojisByCategory>) => {
         const item = { ...props.item, data: [] }
         const shouldRenderEmojis =
           activeCategoryIndex === props.index ||

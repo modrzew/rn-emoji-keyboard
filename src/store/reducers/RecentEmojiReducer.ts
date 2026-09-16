@@ -1,4 +1,4 @@
-import type { JsonEmoji } from 'src/types'
+import type { JsonEmoji } from '../../types'
 
 export type RecentEmojiState = {
   recentlyUsed: JsonEmoji[]

@@ -14,7 +14,6 @@ import { useKeyboardStore } from '../store/useKeyboardStore'
 import { parseEmoji } from '../utils/parseEmoji'
 import { removeSkinToneModifier } from '../utils/skinToneSelectorUtils'
 import { useKeyboard } from '../hooks/useKeyboard'
-import { InteractionManager } from 'react-native'
 
 const emptyEmoji: JsonEmoji = {
   emoji: '',
@@ -147,13 +146,25 @@ export const EmojiCategory = React.memo(
 
     const [maxIndex, setMaxIndex] = React.useState(0)
 
-    // with InteractionManager we can show emojis after interaction is finished
-    // It helps with delay during category change animation
-    InteractionManager.runAfterInteractions(() => {
-      if (maxIndex === 0 && data.length) {
-        setMaxIndex(minimalEmojisAmountToDisplay)
+    // Defer the first batch until JS is idle, with a timeout so the grid stays responsive.
+    React.useEffect(() => {
+      if (maxIndex !== 0 || !data.length) return
+
+      const populate = () => setMaxIndex(minimalEmojisAmountToDisplay)
+      // Older React Native type definitions do not declare these global APIs.
+      const idleCallbacks = globalThis as typeof globalThis & {
+        requestIdleCallback?: (callback: () => void, options: { timeout: number }) => number
+        cancelIdleCallback: (task: number) => void
       }
-    })
+      if (typeof idleCallbacks.requestIdleCallback === 'function') {
+        const task = idleCallbacks.requestIdleCallback(populate, { timeout: 100 })
+        return () => idleCallbacks.cancelIdleCallback(task)
+      }
+
+      // Some web browsers do not provide idle callbacks.
+      const task = setTimeout(populate, 0)
+      return () => clearTimeout(task)
+    }, [maxIndex, data.length, minimalEmojisAmountToDisplay, activeCategoryIndex, title])
 
     const onEndReached = () => {
       if (maxIndex <= data.length) {
